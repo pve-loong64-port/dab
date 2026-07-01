@@ -770,6 +770,8 @@ sub setup_usr_merge {
         push @merged_dirs, qw(lib32 lib64 libx32);
     } elsif ($arch eq 'i386') {
         push @merged_dirs, qw(lib64 libx32);
+    } elsif ($arch eq 'loong64') {
+        push @merged_dirs, qw(lib32 lib64);
     }
     # arm64 needs no extra lib directories beyond the base set, matching debootstrap's link_dir
 
@@ -814,7 +816,7 @@ sub new {
     $self->{logfd}->autoflush(1);
 
     my $arch = $config->{architecture} || die "no 'architecture' specified\n";
-    die "unsupported architecture '$arch'\n" if $arch !~ m/^(i386|amd64|arm64)$/;
+    die "unsupported architecture '$arch'\n" if $arch !~ m/^(i386|amd64|arm64|loong64)$/;
 
     my $suite = $config->{suite} || die "no 'suite' specified\n";
 
