@@ -71,6 +71,9 @@ my $suite_defaults = {
     debian => {
         keyring => '/usr/share/keyrings/debian-archive-keyring.gpg',
     },
+    "debian-loong13" => {
+        keyring => '/usr/share/keyrings/debian-loong64-non-official-archive-keyring.gpg',
+    },
     devuan => {
         #keyring => '/usr/share/keyrings/devuan-archive-keyring.gpg', # TODO: verify
         systemd => 0,
@@ -84,6 +87,12 @@ my $supported_suites = {
     'trixie' => {
         ostype => "debian-13",
         modern_apt_sources => 1,
+    },
+    # Debian Trixie for LoongArch64
+    'loong13' => {
+        ostype => "debian-13",
+        modern_apt_sources => 1,
+        origin => "debian-loong13",
     },
     'bookworm' => {
         ostype => "debian-12",
@@ -163,7 +172,11 @@ sub get_suite_info {
     if (my $defaults = $suite_defaults->{ $suiteinfo->{origin} }) {
         $suiteinfo->{$_} //= $defaults->{$_} for keys $defaults->%*;
     }
-    $suiteinfo->{suite} //= $suite;
+    if ($suite eq 'loong13') {
+        $suiteinfo->{suite} = 'trixie';
+    } else {
+        $suiteinfo->{suite} //= $suite;
+    }
     $suiteinfo->{systemd} //= 1;
 
     return $suiteinfo;
@@ -839,6 +852,13 @@ sub new {
                     "http://deb.debian.org/debian SUITE-updates main contrib",
                     "http://security.debian.org SUITE-security main contrib",
                 );
+        } elsif (lc($suiteinfo->{origin}) eq 'debian-loong13') {
+            push @{ $config->{source} },
+                (
+                    "http://loong13.debian.net/debian-loong64 SUITE main contrib",
+                    "http://loong13.debian.net/debian-loong64 SUITE-updates main contrib",
+                    "http://loong13.debian.net/debian-loong64-security SUITE-security main contrib",
+                );
         } elsif (lc($suiteinfo->{origin}) eq 'ubuntu') {
             my $comp = "main restricted universe multiverse";
             push @{ $config->{source} },
@@ -990,7 +1010,11 @@ sub initialize {
 
         foreach my $comp (@{ $ss->{comp} }) {
             foreach my $compressor (@$COMPRESSORS) {
-                $path = "dists/$ss->{suite}/$comp/binary-$arch/Packages.$compressor->{ext}";
+                if ($ss->{suite} eq 'loong13') {
+                    $path = "dists/trixie/$comp/binary-$arch/Packages.$compressor->{ext}";
+                } else {
+                    $path = "dists/$ss->{suite}/$comp/binary-$arch/Packages.$compressor->{ext}";
+                }
                 $target = "$infodir/" . __url_to_filename("$ss->{source}/$path");
                 my $pkgsrc = "$src/$path";
                 eval {
@@ -2235,7 +2259,7 @@ sub task_postgres {
         @supp = ('13');
     } elsif ($suite eq 'bookworm') {
         @supp = ('15');
-    } elsif ($suite eq 'trixie') {
+    } elsif ($suite eq 'trixie' || $suite eq 'loong13') {
         @supp = ('16', '17');
     }
     $pgversion = $opts->{version} if $opts->{version};
