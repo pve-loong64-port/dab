@@ -6,6 +6,7 @@ Build-Depends: debhelper-compat (= 13),
                libpod-parser-perl,
                libuuid-perl,
                perl,
+               libpod-parser-perl,
 Standards-Version: 4.6.2
 
 Package: dab
