@@ -74,6 +74,8 @@ ${DSC}: ${BUILDDIR}
 	cd ${BUILDDIR}; dpkg-buildpackage -S -us -uc -d -nc
 	lintian ${DSC}
 
+sbuild: $(DSC)
+	sbuild $<
 
 dab.pdf: dab.1
 	groff -man dab.1 |ps2pdf - > dab.pdf
@@ -90,7 +92,7 @@ dab.1: dab.1.pod
 
 .PHONY: clean
 clean:
-	rm -rf ${PACKAGE}-*/ *.deb *.dsc dab_*.tar.gz dab.1 dab.1.pod dab.pdf *.tmp *.changes *.buildinfo *~
+	rm -rf ${PACKAGE}-*/ *.deb *.dsc dab_*.tar.gz dab.1 dab.1.pod dab.pdf *.tmp *.changes *.buildinfo *~ *.build $(PACKAGE)*.tar*
 
 .PHONY: distclean
 distclean: clean
