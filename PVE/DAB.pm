@@ -81,6 +81,9 @@ my $suite_defaults = {
     ubuntu => {
         keyring => '/usr/share/keyrings/ubuntu-archive-keyring.gpg',
     },
+    uloong => {
+        keyring => '/usr/share/keyrings/uloong-repo-pubkey.pgp',
+    },
 };
 
 my $supported_suites = {
@@ -160,6 +163,11 @@ my $supported_suites = {
         origin => 'ubuntu',
         modern_apt_sources => 1,
     },
+    'uloong-resolute' => {
+        ostype => "ubuntu-26.04",
+        origin => 'uloong',
+        modern_apt_sources => 1,
+    },
 };
 
 sub get_suite_info {
@@ -174,6 +182,8 @@ sub get_suite_info {
     }
     if ($suite eq 'loong13') {
         $suiteinfo->{suite} = 'trixie';
+    } elsif ($suite eq 'uloong-resolute') {
+        $suiteinfo->{suite} = 'resolute';
     } else {
         $suiteinfo->{suite} //= $suite;
     }
@@ -589,7 +599,7 @@ sub __sample_config {
         $data .= "lxc.include = /usr/share/lxc/config/debian.common.conf\n";
         $data .= "lxc.include = /usr/share/lxc/config/debian.userns.conf\n"
             if $self->{unprivileged};
-    } elsif ($ostype =~ m/^ubuntu-/) {
+    } elsif ($ostype =~ m/^u(buntu|loong)-/) {
         $data .= "lxc.include = /usr/share/lxc/config/ubuntu.common.conf\n";
         $data .= "lxc.include = /usr/share/lxc/config/ubuntu.userns.conf\n"
             if $self->{unprivileged};
@@ -867,6 +877,14 @@ sub new {
                     "http://archive.ubuntu.com/ubuntu SUITE-updates $comp",
                     "http://archive.ubuntu.com/ubuntu SUITE-security $comp",
                 );
+        } elsif (lc($suiteinfo->{origin}) eq 'uloong') {
+            my $comp = "main restricted universe multiverse";
+            push @{ $config->{source} },
+                (
+                    "https://uloong.loongfans.cn/uloong SUITE $comp",
+                    #"https://uloong.loongfans.cn/uloong SUITE-updates $comp",
+                    #"https://uloong.loongfans.cn/uloong SUITE-security $comp",
+                );
         } else {
             die "implement me";
         }
@@ -958,6 +976,9 @@ sub new {
         if ($suite eq 'jammy') {
             push @$excl, qw(fuse); # avoid fuse2 <-> fuse3 conflict
         }
+    } elsif (lc($suiteinfo->{origin}) eq 'uloong' && $suiteinfo->{systemd}) {
+        push @$excl,
+            qw(libmodule-build-perl libdrm-common libdrm2 libplymouth5 plymouth plymouth-theme-ubuntu-text powermgmt-base);
     } else {
         push @$excl, qw(module-init-tools pciutils hdparm memtest86+ parted);
     }
